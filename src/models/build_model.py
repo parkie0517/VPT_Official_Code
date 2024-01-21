@@ -14,7 +14,7 @@ logger = logging.get_logger("visual_prompt")
 _MODEL_TYPES = {
     "resnet": ResNet,
     "convnext": ConvNeXt,
-    "vit": ViT,
+    "vit": ViT, # key:value. if the key is selected, then the value is returned
     "swin": Swin,
     "ssl-vit": SSLViT,
 }
@@ -33,7 +33,7 @@ def build_model(cfg):
 
     # Construct the model
     train_type = cfg.MODEL.TYPE
-    model = _MODEL_TYPES[train_type](cfg)
+    model = _MODEL_TYPES[train_type](cfg) # if ViT is selected, then 'ViT(cfg)' is ran
 
     log_model_info(model, verbose=cfg.DBG)
     model, device = load_model_to_device(model, cfg)

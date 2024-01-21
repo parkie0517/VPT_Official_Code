@@ -99,7 +99,7 @@ def train(cfg, args):
     logging_train_setup(args, cfg)
     logger = logging.get_logger("visual_prompt") # a looger keeps track of the records that happens during the program execution
 
-    train_loader, val_loader, test_loader = get_loaders(cfg, logger) # returns the 3 dataset loaders
+    train_loader, val_loader, test_loader = get_loaders(cfg, logger) # returns the 3 dataset loaders. the default batch size is 32
     logger.info("Constructing models...") # this log is not labeled as 'info'
     model, cur_device = build_model(cfg) # retuns the model and the current device. E.g. (vit, cuda)
 
@@ -109,12 +109,12 @@ def train(cfg, args):
     trainer = Trainer(cfg, model, evaluator, cur_device)
 
     if train_loader:
-        trainer.train_classifier(train_loader, val_loader, test_loader) # training part
+        trainer.train_classifier(train_loader, val_loader, test_loader) # performs both training and testing part
     else:
         print("No train loader presented. Exit")
 
-    if cfg.SOLVER.TOTAL_EPOCH == 0: 
-        trainer.eval_classifier(test_loader, "test", 0) # testing part
+    if cfg.SOLVER.TOTAL_EPOCH == 0:
+        trainer.eval_classifier(test_loader, "test", 0) # performs only the testing part
 
 
 def main(args):

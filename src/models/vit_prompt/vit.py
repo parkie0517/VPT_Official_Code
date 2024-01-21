@@ -26,8 +26,7 @@ class PromptedTransformer(Transformer):
         assert prompt_config.INITIATION == "random"
         assert prompt_config.NUM_DEEP_LAYERS is None
         assert not prompt_config.DEEP_SHARED
-        super(PromptedTransformer, self).__init__(
-            config, img_size, vis)
+        super(PromptedTransformer, self).__init__(config, img_size, vis)
         
         self.prompt_config = prompt_config
         self.vit_config = config
@@ -35,25 +34,23 @@ class PromptedTransformer(Transformer):
         img_size = _pair(img_size)
         patch_size = _pair(config.patches["size"])
 
-        num_tokens = self.prompt_config.NUM_TOKENS
+        num_tokens = self.prompt_config.NUM_TOKENS # default is 5
         self.num_tokens = num_tokens  # number of prompted tokens
 
-        self.prompt_dropout = Dropout(self.prompt_config.DROPOUT)
+        self.prompt_dropout = Dropout(self.prompt_config.DROPOUT) # default is 0.0
 
         # if project the prompt embeddings
         if self.prompt_config.PROJECT > -1:
             # only for prepend / add
             prompt_dim = self.prompt_config.PROJECT
-            self.prompt_proj = nn.Linear(
-                prompt_dim, config.hidden_size)
-            nn.init.kaiming_normal_(
-                self.prompt_proj.weight, a=0, mode='fan_out')
+            self.prompt_proj = nn.Linear(prompt_dim, config.hidden_size)
+            nn.init.kaiming_normal_(self.prompt_proj.weight, a=0, mode='fan_out')
         else:
             prompt_dim = config.hidden_size
             self.prompt_proj = nn.Identity()
 
         # initiate prompt:
-        if self.prompt_config.INITIATION == "random":
+        if self.prompt_config.INITIATION == "random": # only random initialization is supported
             val = math.sqrt(6. / float(3 * reduce(mul, patch_size, 1) + prompt_dim))  # noqa
 
             self.prompt_embeddings = nn.Parameter(torch.zeros(
@@ -108,11 +105,10 @@ class PromptedTransformer(Transformer):
 
         for i in range(num_layers):
             if i == 0:
-                hidden_states, weights = self.encoder.layer[i](embedding_output)
+                hidden_states, weights = self.encoder.layer[i](embedding_output) # 
             else:
                 if i <= self.deep_prompt_embeddings.shape[0]:
-                    deep_prompt_emb = self.prompt_dropout(self.prompt_proj(
-                        self.deep_prompt_embeddings[i-1]).expand(B, -1, -1))
+                    deep_prompt_emb = self.prompt_dropout(self.prompt_proj(self.deep_prompt_embeddings[i-1]).expand(B, -1, -1))
 
                     hidden_states = torch.cat((
                         hidden_states[:, :1, :],
@@ -134,8 +130,7 @@ class PromptedTransformer(Transformer):
         embedding_output = self.incorporate_prompt(x)
 
         if self.prompt_config.DEEP:
-            encoded, attn_weights = self.forward_deep_prompt(
-                embedding_output)
+            encoded, attn_weights = self.forward_deep_prompt(embedding_output) # passes through the Transformer model
         else:
             encoded, attn_weights = self.encoder(embedding_output)
 
@@ -143,19 +138,14 @@ class PromptedTransformer(Transformer):
 
 
 class PromptedVisionTransformer(VisionTransformer):
-    def __init__(
-        self, prompt_cfg, model_type,
-        img_size=224, num_classes=21843, vis=False
-    ):
-        assert prompt_cfg.VIT_POOL_TYPE == "original"
-        super(PromptedVisionTransformer, self).__init__(
-            model_type, img_size, num_classes, vis)
+    def __init__(self, prompt_cfg, model_type, img_size=224, num_classes=21843, vis=False):
+        assert prompt_cfg.VIT_POOL_TYPE == "original" # issues an error if result is FALSE
+        super(PromptedVisionTransformer, self).__init__(model_type, img_size, num_classes, vis)
         if prompt_cfg is None:
             raise ValueError("prompt_cfg cannot be None if using PromptedVisionTransformer")
         self.prompt_cfg = prompt_cfg
         vit_cfg = CONFIGS[model_type]
-        self.transformer = PromptedTransformer(
-            prompt_cfg, vit_cfg, img_size, vis)
+        self.transformer = PromptedTransformer(prompt_cfg, vit_cfg, img_size, vis)
 
     def forward(self, x, vis=False):
         x, attn_weights = self.transformer(x)

@@ -258,8 +258,8 @@ class Encoder(nn.Module):
         for layer_block in self.layer:
             hidden_states, weights = layer_block(hidden_states)
             if self.vis:
-                attn_weights.append(weights)
-        encoded = self.encoder_norm(hidden_states)
+                attn_weights.append(weights) # attention weight from each layer
+        encoded = self.encoder_norm(hidden_states) # normalized hidden state
         return encoded, attn_weights
 
     def forward_cls_layerwise(self, hidden_states):

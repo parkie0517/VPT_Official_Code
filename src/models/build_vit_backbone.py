@@ -385,7 +385,7 @@ def build_vit_sup_models(
         "sup_vitl32_imagenet21k": 1024,
         "sup_vith14_imagenet21k": 1280,
     }
-    if prompt_cfg is not None:
+    if prompt_cfg is not None: # if prompting is enabled!
         model = PromptedVisionTransformer(
             prompt_cfg, model_type,
             crop_size, num_classes=-1, vis=vis

@@ -47,7 +47,7 @@ _C.MODEL.LINEAR.DROPOUT = 0.1
 # Prompt options
 # ----------------------------------------------------------------------
 _C.MODEL.PROMPT = CfgNode()
-_C.MODEL.PROMPT.NUM_TOKENS = 5
+_C.MODEL.PROMPT.NUM_TOKENS = 5 # default prompt length is 5
 _C.MODEL.PROMPT.LOCATION = "prepend"
 # prompt initalizatioin: 
     # (1) default "random"

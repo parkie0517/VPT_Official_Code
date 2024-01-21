@@ -20,17 +20,19 @@ logger = logging.get_logger("visual_prompt")
 
 
 class ViT(nn.Module):
-    """ViT-related model."""
+    """
+    ViT-related model.
+    """
 
     def __init__(self, cfg, load_pretrain=True, vis=False):
         super(ViT, self).__init__()
 
         if "prompt" in cfg.MODEL.TRANSFER_TYPE:
-            prompt_cfg = cfg.MODEL.PROMPT
+            prompt_cfg = cfg.MODEL.PROMPT # saves the configurations of the prompt. Eg. prompt length, prompt initialization method....
         else:
-            prompt_cfg = None
+            prompt_cfg = None # does not use the prompt
 
-        if cfg.MODEL.TRANSFER_TYPE != "end2end" and "prompt" not in cfg.MODEL.TRANSFER_TYPE:
+        if cfg.MODEL.TRANSFER_TYPE != "end2end" and "prompt" not in cfg.MODEL.TRANSFER_TYPE: # end2end = full fine-tuning
             # linear, cls, tiny-tl, parital, adapter
             self.froze_enc = True
         else:
@@ -42,8 +44,7 @@ class ViT(nn.Module):
         else:
             adapter_cfg = None
 
-        self.build_backbone(
-            prompt_cfg, cfg, adapter_cfg, load_pretrain, vis=vis)
+        self.build_backbone(prompt_cfg, cfg, adapter_cfg, load_pretrain, vis=vis)
         self.cfg = cfg
         self.setup_side()
         self.setup_head(cfg)

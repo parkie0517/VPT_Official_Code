@@ -62,7 +62,8 @@ class Trainer():
         self.cpu_device = torch.device("cpu")
 
     def forward_one_batch(self, inputs, targets, is_train):
-        """Train a single (full) epoch on the model using the given
+        """
+        Train a single (full) epoch on the model using the given
         data loader.
 
         Args:
@@ -83,7 +84,7 @@ class Trainer():
 
         # forward
         with torch.set_grad_enabled(is_train):
-            outputs = self.model(inputs)  # (batchsize, num_cls)
+            outputs = self.model(inputs)  # performs forward pass (batchsize, num_cls)
             if self.cfg.DBG:
                 logger.info(
                     "shape of model output: {}, targets: {}".format(
@@ -91,15 +92,11 @@ class Trainer():
 
             if self.cls_criterion.is_local() and is_train:
                 self.model.eval()
-                loss = self.cls_criterion(
-                    outputs, targets, self.cls_weights,
-                    self.model, inputs
-                )
+                loss = self.cls_criterion(outputs, targets, self.cls_weights, self.model, inputs)
             elif self.cls_criterion.is_local():
                 return torch.tensor(1), outputs
             else:
-                loss = self.cls_criterion(
-                    outputs, targets, self.cls_weights)
+                loss = self.cls_criterion(outputs, targets, self.cls_weights)
 
             if loss == float('inf'):
                 logger.info(
@@ -114,9 +111,9 @@ class Trainer():
 
         # =======backward and optim step only if in training phase... =========
         if is_train:
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+            self.optimizer.zero_grad() # initializes the gradient to zero
+            loss.backward() # calculates the gradients
+            self.optimizer.step() # updates the parameter
 
         return loss, outputs
 
@@ -138,8 +135,8 @@ class Trainer():
         self.save_prompt(0)
 
         # setup training epoch params
-        total_epoch = self.cfg.SOLVER.TOTAL_EPOCH
-        total_data = len(train_loader)
+        total_epoch = self.cfg.SOLVER.TOTAL_EPOCH # in src/configs/config.py, the default epoch is set to 30 
+        total_data = len(train_loader) # returns the number of the batches! not the number of the samples
         best_epoch = -1
         best_metric = 0
         log_interval = self.cfg.SOLVER.LOG_EVERY_N
@@ -148,29 +145,30 @@ class Trainer():
         batch_time = AverageMeter('Time', ':6.3f')
         data_time = AverageMeter('Data', ':6.3f')
 
-        self.cls_weights = train_loader.dataset.get_class_weights(
-            self.cfg.DATA.CLASS_WEIGHTS_TYPE)
+        self.cls_weights = train_loader.dataset.get_class_weights(self.cfg.DATA.CLASS_WEIGHTS_TYPE) # CLASS_WEIGHTS_TYPE = 'none'
         # logger.info(f"class weights: {self.cls_weights}")
         patience = 0  # if > self.cfg.SOLVER.PATIENCE, stop training
 
         for epoch in range(total_epoch):
             # reset averagemeters to measure per-epoch results
             losses.reset()
-            batch_time.reset()
+            batch_time.reset() # used to record elapsed time
             data_time.reset()
 
             lr = self.scheduler.get_lr()[0]
+            # Save the current epoch and the learning rate in the log file
             logger.info(
                 "Training {} / {} epoch, with learning rate {}".format(
                     epoch + 1, total_epoch, lr
                 )
             )
 
-            # Enable training mode
-            self.model.train()
+            
+            self.model.train() # sets the model to training mode. doesn't really do much. but stil use it!
 
-            end = time.time()
-
+            end = time.time() # records current time
+            
+            # 1 epoch is ran in this for loop
             for idx, input_data in enumerate(train_loader):
                 if self.cfg.DBG and idx == 20:
                     # if debugging, only need to see the first few iterations
@@ -182,7 +180,7 @@ class Trainer():
                 # measure data loading time
                 data_time.update(time.time() - end)
 
-                train_loss, _ = self.forward_one_batch(X, targets, True)
+                train_loss, _ = self.forward_one_batch(X, targets, True) # forward and backward pass are performed in forward_one_batch()
 
                 if train_loss == -1:
                     # continue
@@ -201,15 +199,9 @@ class Trainer():
                         seconds_per_batch * (total_data - idx - 1) + seconds_per_batch*total_data*(total_epoch-epoch-1)))
                     logger.info(
                         "\tTraining {}/{}. train loss: {:.4f},".format(
-                            idx + 1,
-                            total_data,
-                            train_loss
-                        )
+                            idx + 1, total_data, train_loss)
                         + "\t{:.4f} s / batch. (data: {:.2e}). ETA={}, ".format(
-                            seconds_per_batch,
-                            data_time.val,
-                            str(eta),
-                        )
+                            seconds_per_batch, data_time.val, str(eta),)
                         + "max mem: {:.1f} GB ".format(gpu_mem_usage())
                     )
             logger.info(
@@ -217,20 +209,18 @@ class Trainer():
                 + "avg data time: {:.2e}, avg batch time: {:.4f}, ".format(
                     data_time.avg, batch_time.avg)
                 + "average train loss: {:.4f}".format(losses.avg))
-             # update lr, scheduler.step() must be called after optimizer.step() according to the docs: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate  # noqa
-            self.scheduler.step()
+            
+            self.scheduler.step() # update lr, scheduler.step() must be called after optimizer.step() 
 
-            # Enable eval mode
-            self.model.eval()
+            self.model.eval() # sets the model to evaluation mode
 
             self.save_prompt(epoch + 1)
 
             # eval at each epoch for single gpu training
             self.evaluator.update_iteration(epoch)
-            self.eval_classifier(val_loader, "val", epoch == total_epoch - 1)
+            self.eval_classifier(val_loader, "val", epoch == total_epoch - 1) # performs evaluation using the validation dataset
             if test_loader is not None:
-                self.eval_classifier(
-                    test_loader, "test", epoch == total_epoch - 1)
+                self.eval_classifier(test_loader, "test", epoch == total_epoch - 1) # performs evaluation using the test dataset
 
             # check the patience
             t_name = "val_" + val_loader.dataset.name
@@ -269,12 +259,14 @@ class Trainer():
                 if self.cfg.MODEL.PROMPT.DEEP:
                     deep_embds = self.model.enc.transformer.deep_prompt_embeddings.cpu().numpy()
                     out["deep_prompt"] = deep_embds
-                torch.save(out, os.path.join(
-                    self.cfg.OUTPUT_DIR, f"prompt_ep{epoch}.pth"))
+                torch.save(out, os.path.join(self.cfg.OUTPUT_DIR, f"prompt_ep{epoch}.pth"))
 
     @torch.no_grad()
     def eval_classifier(self, data_loader, prefix, save=False):
-        """evaluate classifier"""
+        """
+        evaluate classifier
+        either the validation or test dataset can be used for evaluating 
+        """
         batch_time = AverageMeter('Time', ':6.3f')
         data_time = AverageMeter('Data', ':6.3f')
         losses = AverageMeter('Loss', ':.4e')
