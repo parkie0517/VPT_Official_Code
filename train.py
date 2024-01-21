@@ -113,7 +113,7 @@ def train(cfg, args):
     else:
         print("No train loader presented. Exit")
 
-    if cfg.SOLVER.TOTAL_EPOCH == 0:
+    if cfg.SOLVER.TOTAL_EPOCH == 0: 
         trainer.eval_classifier(test_loader, "test", 0) # testing part
 
 
