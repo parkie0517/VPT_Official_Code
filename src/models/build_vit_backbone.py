@@ -369,9 +369,7 @@ def _build_swin_model(model_type, crop_size, model_root):
     return model, feat_dim
 
 
-def build_vit_sup_models(
-    model_type, crop_size, prompt_cfg=None, model_root=None, adapter_cfg=None, load_pretrain=True, vis=False
-):
+def build_vit_sup_models(model_type, crop_size, prompt_cfg=None, model_root=None, adapter_cfg=None, load_pretrain=True, vis=False):
     # image size is the size of actual image
     m2featdim = {
         "sup_vitb16_224": 768,
@@ -386,10 +384,7 @@ def build_vit_sup_models(
         "sup_vith14_imagenet21k": 1280,
     }
     if prompt_cfg is not None: # if prompting is enabled!
-        model = PromptedVisionTransformer(
-            prompt_cfg, model_type,
-            crop_size, num_classes=-1, vis=vis
-        )
+        model = PromptedVisionTransformer(prompt_cfg, model_type, crop_size, num_classes=-1, vis=vis)
     elif adapter_cfg is not None:
         model = ADPT_VisionTransformer(model_type, crop_size, num_classes=-1, adapter_cfg=adapter_cfg)
 
@@ -400,5 +395,5 @@ def build_vit_sup_models(
     if load_pretrain:
         model.load_from(np.load(os.path.join(model_root, MODEL_ZOO[model_type])))
 
-    return model, m2featdim[model_type]
+    return model, m2featdim[model_type] # finally returns the model!
 
