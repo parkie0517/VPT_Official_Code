@@ -21,7 +21,7 @@ logger = logging.get_logger("visual_prompt")
 
 class ViT(nn.Module):
     """
-    ViT-related model.
+    This is where the ViT is defined
     """
 
     def __init__(self, cfg, load_pretrain=True, vis=False):
@@ -63,6 +63,7 @@ class ViT(nn.Module):
 
     def build_backbone(self, prompt_cfg, cfg, adapter_cfg, load_pretrain, vis):
         transfer_type = cfg.MODEL.TRANSFER_TYPE
+        # builds the prompted vision transformer model and returns it and the size of the image
         self.enc, self.feat_dim = build_vit_sup_models(
             cfg.DATA.FEATURE, cfg.DATA.CROPSIZE, prompt_cfg, cfg.MODEL.MODEL_ROOT, adapter_cfg, load_pretrain, vis
         )
