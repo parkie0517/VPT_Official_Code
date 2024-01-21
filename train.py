@@ -97,24 +97,24 @@ def train(cfg, args):
 
     # setup training env including loggers
     logging_train_setup(args, cfg)
-    logger = logging.get_logger("visual_prompt")
+    logger = logging.get_logger("visual_prompt") # a looger keeps track of the records that happens during the program execution
 
-    train_loader, val_loader, test_loader = get_loaders(cfg, logger)
-    logger.info("Constructing models...")
-    model, cur_device = build_model(cfg)
+    train_loader, val_loader, test_loader = get_loaders(cfg, logger) # returns the 3 dataset loaders
+    logger.info("Constructing models...") # this log is not labeled as 'info'
+    model, cur_device = build_model(cfg) # retuns the model and the current device. E.g. (vit, cuda)
 
     logger.info("Setting up Evalutator...")
-    evaluator = Evaluator()
+    evaluator = Evaluator() # some type of an evaluator that evaluates the classification results
     logger.info("Setting up Trainer...")
     trainer = Trainer(cfg, model, evaluator, cur_device)
 
     if train_loader:
-        trainer.train_classifier(train_loader, val_loader, test_loader)
+        trainer.train_classifier(train_loader, val_loader, test_loader) # training part
     else:
         print("No train loader presented. Exit")
 
     if cfg.SOLVER.TOTAL_EPOCH == 0:
-        trainer.eval_classifier(test_loader, "test", 0)
+        trainer.eval_classifier(test_loader, "test", 0) # testing part
 
 
 def main(args):

@@ -131,7 +131,7 @@ class Trainer():
 
     def train_classifier(self, train_loader, val_loader, test_loader):
         """
-        Train a classifier using epoch
+        This is where the actual training loop is!
         """
         # save the model prompt if required before training
         self.model.eval()
