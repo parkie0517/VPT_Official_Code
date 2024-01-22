@@ -384,6 +384,7 @@ def build_vit_sup_models(model_type, crop_size, prompt_cfg=None, model_root=None
         "sup_vith14_imagenet21k": 1280,
     }
     if prompt_cfg is not None: # if prompting is enabled!
+        # defines the VPT model
         model = PromptedVisionTransformer(prompt_cfg, model_type, crop_size, num_classes=-1, vis=vis)
     elif adapter_cfg is not None:
         model = ADPT_VisionTransformer(model_type, crop_size, num_classes=-1, adapter_cfg=adapter_cfg)
@@ -392,8 +393,7 @@ def build_vit_sup_models(model_type, crop_size, prompt_cfg=None, model_root=None
         model = VisionTransformer(
             model_type, crop_size, num_classes=-1, vis=vis)
     
-    if load_pretrain:
+    if load_pretrain: # loads the pre-trained weight of the specified model_type
         model.load_from(np.load(os.path.join(model_root, MODEL_ZOO[model_type])))
 
     return model, m2featdim[model_type] # finally returns the model!
-
