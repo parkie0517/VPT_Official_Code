@@ -130,5 +130,10 @@ def main(args):
 
 
 if __name__ == '__main__':
+    """
+    this is where everything starts!
+    - refer to link below to learn more about argument parser
+    - https://engineer-mole.tistory.com/213
+    """
     args = default_argument_parser().parse_args()
-    main(args)
+    main(args) # passes the arguments to the main function
