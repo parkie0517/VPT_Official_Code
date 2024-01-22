@@ -53,7 +53,7 @@ class ViT(nn.Module): # inherits nn.Module. this is a common base class for all 
         else:
             adapter_cfg = None
 
-        self.build_backbone(prompt_cfg, cfg, adapter_cfg, load_pretrain, vis=vis) # builds the backbone
+        self.build_backbone(prompt_cfg, cfg, adapter_cfg, load_pretrain, vis=vis) # builds the backbone (encoder + embedding layer)
         self.cfg = cfg
         self.setup_side()
         self.setup_head(cfg)
@@ -73,6 +73,8 @@ class ViT(nn.Module): # inherits nn.Module. this is a common base class for all 
     def build_backbone(self, prompt_cfg, cfg, adapter_cfg, load_pretrain, vis):
         """
         Now let us build the backbone network!
+        We will only be builing a Transformer's encoder and its embedding layer
+        We will not be building the mlp head!
         """
 
         transfer_type = cfg.MODEL.TRANSFER_TYPE # transfer_type is "prompt" in our case
@@ -83,7 +85,7 @@ class ViT(nn.Module): # inherits nn.Module. this is a common base class for all 
 
         # linear, prompt, cls, cls+prompt, partial_1
         if transfer_type == "partial-1":
-            total_layer = len(self.enc.transformer.encoder.layer)
+            total_layer = len(self.enc.transformer.encoder.layer) # layer = (MHSA + MLP) x num_layers
             # tuned_params = [
             #     "transformer.encoder.layer.{}".format(i-1) for i in range(total_layer)]
             for k, p in self.enc.named_parameters():
@@ -116,9 +118,9 @@ class ViT(nn.Module): # inherits nn.Module. this is a common base class for all 
                     p.requires_grad = False
 
         elif transfer_type == "prompt":
-            for k, p in self.enc.named_parameters():
-                if "prompt" not in k:
-                    p.requires_grad = False
+            for k, p in self.enc.named_parameters(): # iterates over all the named parameters
+                if "prompt" not in k: # checks whether the name includes "prompt" in k
+                    p.requires_grad = False # freezes the parameters
 
         elif transfer_type == "prompt+bias":
             for k, p in self.enc.named_parameters():
