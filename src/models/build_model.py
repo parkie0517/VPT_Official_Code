@@ -7,32 +7,37 @@ import torch
 
 from .resnet import ResNet
 from .convnext import ConvNeXt
-from .vit_models import ViT, Swin, SSLViT
+from .vit_models import ViT, Swin, SSLViT # There exists a class called ViT inside vit_models.py file
 from ..utils import logging
 logger = logging.get_logger("visual_prompt")
 # Supported model types
 _MODEL_TYPES = {
     "resnet": ResNet,
     "convnext": ConvNeXt,
-    "vit": ViT, # key:value. if the key is selected, then the value is returned
+    "vit": ViT, # (key:value). if the key("vit") is selected, then the value(ViT class) is returned
     "swin": Swin,
     "ssl-vit": SSLViT,
 }
 
 
-def build_model(cfg):
+def build_model(cfg): 
     """
     build model here
+    The followin things happen here.
+        1. uses assert to check if the code ran be ran
+        2. constructs the models
     """
-    assert (
-        cfg.MODEL.TYPE in _MODEL_TYPES.keys()
-    ), "Model type '{}' not supported".format(cfg.MODEL.TYPE)
-    assert (
-        cfg.NUM_GPUS <= torch.cuda.device_count()
-    ), "Cannot use more GPU devices than available"
+     
+    # checks if the model type is valid
+    assert (cfg.MODEL.TYPE in _MODEL_TYPES.keys()
+            ), "Model type '{}' not supported".format(cfg.MODEL.TYPE)
+    
+    # checks if the specified number of GPUs can be used
+    assert (cfg.NUM_GPUS <= torch.cuda.device_count()
+            ), "Cannot use more GPU devices than available"
 
-    # Construct the model
-    train_type = cfg.MODEL.TYPE
+    # Constructs the model
+    train_type = cfg.MODEL.TYPE # default MODEL.TYPE = 'vit'
     model = _MODEL_TYPES[train_type](cfg) # if ViT is selected, then 'ViT(cfg)' is ran
 
     log_model_info(model, verbose=cfg.DBG)

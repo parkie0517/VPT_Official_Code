@@ -115,7 +115,7 @@ def train(cfg, args):
 
     train_loader, val_loader, test_loader = get_loaders(cfg, logger) # returns the 3 dataset loaders. the default batch size is 32
     logger.info("Constructing models...") # this log is not labeled as 'info'
-    model, cur_device = build_model(cfg) # retuns the model and the current device. E.g. (vit, cuda)
+    model, cur_device = build_model(cfg) # returns the model and the current device. E.g. (vit, cuda)
 
     logger.info("Setting up Evalutator...")
     evaluator = Evaluator() # some type of an evaluator that evaluates the classification results
