@@ -114,10 +114,10 @@ class PromptedTransformer(Transformer): # inherits from the Transformer class
         # set train status for this class: disable all but the prompt-related modules
         if mode:
             # training:
-            self.encoder.eval()
-            self.embeddings.eval()
-            self.prompt_proj.train()
-            self.prompt_dropout.train()
+            self.encoder.eval() # freeze
+            self.embeddings.eval() # freeze
+            self.prompt_proj.train() # train
+            self.prompt_dropout.train() # train
         else:
             # eval:
             for module in self.children():
