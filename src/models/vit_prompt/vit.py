@@ -20,9 +20,16 @@ from ...utils import logging
 logger = logging.get_logger("visual_prompt")
 
 
-class PromptedTransformer(Transformer):
+class PromptedTransformer(Transformer): # inherits from the Transformer class
     def __init__(self, prompt_config, config, img_size, vis):
-        assert prompt_config.LOCATION == "prepend"
+        """
+        PromptedTransformer() has 4 parameters.
+            1. prompt configuration
+            2. ViT configuration
+            3. size of the input image (224 or 384)
+            4. vis = False
+        """
+        assert prompt_config.LOCATION == "prepend" # if location is not "prepend" then assert error is made! becuase this code doesn't support methods other than "prepend"
         assert prompt_config.INITIATION == "random"
         assert prompt_config.NUM_DEEP_LAYERS is None
         assert not prompt_config.DEEP_SHARED
@@ -31,46 +38,56 @@ class PromptedTransformer(Transformer):
         self.prompt_config = prompt_config
         self.vit_config = config
         
-        img_size = _pair(img_size)
-        patch_size = _pair(config.patches["size"])
+        img_size = _pair(img_size) # returns a tuple. Eg. (256, 256)
+        patch_size = _pair(config.patches["size"]) # returns a patch size tuple. Eg. (16, 16)
 
         num_tokens = self.prompt_config.NUM_TOKENS # default is 5
         self.num_tokens = num_tokens  # number of prompted tokens
 
         self.prompt_dropout = Dropout(self.prompt_config.DROPOUT) # default is 0.0
 
-        # if project the prompt embeddings
-        if self.prompt_config.PROJECT > -1:
+        """
+        Settings for the Prompt Projection Layer
+        prompt_config.PROJECT is the embedding size of the prompts
+            Option 1: Transform the prompt embedding size to a different size
+            Option 2: Use the original prompt embedding size
+        """
+        if self.prompt_config.PROJECT > -1: # Option 1
             # only for prepend / add
             prompt_dim = self.prompt_config.PROJECT
-            self.prompt_proj = nn.Linear(prompt_dim, config.hidden_size)
-            nn.init.kaiming_normal_(self.prompt_proj.weight, a=0, mode='fan_out')
-        else:
+            self.prompt_proj = nn.Linear(prompt_dim, config.hidden_size) # Changes the size of the prompts
+            nn.init.kaiming_normal_(self.prompt_proj.weight, a=0, mode='fan_out') # Applies He init methods to the projection matrix
+        else: # Option 2
             prompt_dim = config.hidden_size
-            self.prompt_proj = nn.Identity()
+            self.prompt_proj = nn.Identity() # Identity means no projection is applied.
 
-        # initiate prompt:
+        """
+        Initialize the values of the prompts
+            Option 1: Shallow
+            Option 2: Deep
+        """
         if self.prompt_config.INITIATION == "random": # only random initialization is supported
-            val = math.sqrt(6. / float(3 * reduce(mul, patch_size, 1) + prompt_dim))  # noqa
-
-            self.prompt_embeddings = nn.Parameter(torch.zeros(
-                1, num_tokens, prompt_dim))
             # xavier_uniform initialization
-            nn.init.uniform_(self.prompt_embeddings.data, -val, val)
+            val = math.sqrt(6. / float(3 * reduce(mul, patch_size, 1) + prompt_dim))  # noqa
+            """
+            prompt_embeddings are the prompts!
+            the size of this is (1, number of tokens, prompt dimention)
+            """
+            self.prompt_embeddings = nn.Parameter(torch.zeros(1, num_tokens, prompt_dim)) # Embeddings for only for the 1 layer
+            nn.init.uniform_(self.prompt_embeddings.data, -val, val) # initializes the prompts using Xavier method
 
             if self.prompt_config.DEEP:  # noqa
-
-                total_d_layer = config.transformer["num_layers"]-1
-                self.deep_prompt_embeddings = nn.Parameter(torch.zeros(
-                    total_d_layer, num_tokens, prompt_dim))
-                # xavier_uniform initialization
-                nn.init.uniform_(self.deep_prompt_embeddings.data, -val, val)
+                total_d_layer = config.transformer["num_layers"]-1 # returns the number of layer in the ViT Transformer
+                self.deep_prompt_embeddings = nn.Parameter(torch.zeros(total_d_layer, num_tokens, prompt_dim)) # Embeddings for the rest of the layers (used for VPT-Deep)
+                nn.init.uniform_(self.deep_prompt_embeddings.data, -val, val) # initializes the prompts using Xavier method
 
         else:
             raise ValueError("Other initiation scheme is not supported")
 
     def incorporate_prompt(self, x):
-        # combine prompt embeddings with image-patch embeddings
+        """
+        combine prompt embeddings with image-patch embeddings
+        """
         B = x.shape[0]
         # after CLS token, all before image patches
         x = self.embeddings(x)  # (batch_size, 1 + n_patches, hidden_dim)
@@ -137,14 +154,23 @@ class PromptedTransformer(Transformer):
         return encoded, attn_weights
 
 
-class PromptedVisionTransformer(VisionTransformer):
-    def __init__(self, prompt_cfg, model_type, img_size=224, num_classes=21843, vis=False):
-        assert prompt_cfg.VIT_POOL_TYPE == "original" # issues an error if result is FALSE
+class PromptedVisionTransformer(VisionTransformer): # inherits from the VisionTransformer
+    def __init__(self, prompt_cfg, model_type, img_size=224, num_classes=21843, vis=False): # the number of imgnet21k's classes is 21,843
+        assert prompt_cfg.VIT_POOL_TYPE == "original" # issues an error if VIT_POOL_TYPE is not "original"
         super(PromptedVisionTransformer, self).__init__(model_type, img_size, num_classes, vis)
         if prompt_cfg is None:
             raise ValueError("prompt_cfg cannot be None if using PromptedVisionTransformer")
         self.prompt_cfg = prompt_cfg
-        vit_cfg = CONFIGS[model_type]
+        vit_cfg = CONFIGS[model_type] # go to ""./src/configs/vit_configs.py" to see the configurations of the ViT models
+        
+        """
+        PromptedTransformer() class is made.
+        There are 4 arguments.
+            1. prompt configuration
+            2. ViT configuration
+            3. size of the input image (224 or 384)
+            4. vis = False
+        """
         self.transformer = PromptedTransformer(prompt_cfg, vit_cfg, img_size, vis)
 
     def forward(self, x, vis=False):

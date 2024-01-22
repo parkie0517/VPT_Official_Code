@@ -185,6 +185,10 @@ class Embeddings(nn.Module):
 
 
 class Block(nn.Module):
+    """
+    The Block class:
+    MHSA + MLP
+    """
     def __init__(self, config, vis):
         super(Block, self).__init__()
         self.hidden_size = config.hidden_size
@@ -195,14 +199,14 @@ class Block(nn.Module):
 
     def forward(self, x):
         h = x
-        x = self.attention_norm(x)
-        x, weights = self.attn(x)
-        x = x + h
+        x = self.attention_norm(x) # performs layer normalization
+        x, weights = self.attn(x) # performs MH-SA
+        x = x + h # residual connection
 
         h = x
-        x = self.ffn_norm(x)
-        x = self.ffn(x)
-        x = x + h
+        x = self.ffn_norm(x) # performs layer normalization
+        x = self.ffn(x) # makes the embeddings go through MLP individually
+        x = x + h # residual connection
         return x, weights
 
     def load_from(self, weights, n_block):
@@ -259,7 +263,7 @@ class Encoder(nn.Module):
             hidden_states, weights = layer_block(hidden_states)
             if self.vis:
                 attn_weights.append(weights) # attention weight from each layer
-        encoded = self.encoder_norm(hidden_states) # normalized hidden state
+        encoded = self.encoder_norm(hidden_states) # performs layer normalization to the output of the encoder. I don't know what this is for
         return encoded, attn_weights
 
     def forward_cls_layerwise(self, hidden_states):
@@ -284,8 +288,29 @@ class Encoder(nn.Module):
 
 class Transformer(nn.Module):
     def __init__(self, config, img_size, vis):
+        """
+        the 3 parameters mean
+            1. vit_config
+            2. size of the input image
+            3. vis which is False
+        """
         super(Transformer, self).__init__()
+        """
+        The Embeddings class does 3 things
+            1. Divides the image into patches
+            2. Performs patch embeddings
+            3. Adds positional embeddings
+        """
         self.embeddings = Embeddings(config, img_size=img_size)
+
+        """
+        The Encoder class is just an ordinary encoder of a Transformer that does....
+            1. inputs embeddings
+            2. encodes (MHSA + MLP)
+            3. outputs the embeddings
+            4. repeats step1~3 for the number of layers
+            5. applies layer normalization to the output (This part is different from the original ViT)
+        """
         self.encoder = Encoder(config, vis)
 
     def forward(self, input_ids):

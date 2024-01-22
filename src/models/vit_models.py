@@ -3,6 +3,8 @@
 """
 ViT-related models
 Note: models return logits instead of prob
+logits are raw output of the final layer of the model
+probs are normalized form of logits. normally logits would go through a softmax layer to and gets converted into probabilities
 """
 import torch
 import torch.nn as nn
@@ -19,18 +21,25 @@ from ..utils import logging
 logger = logging.get_logger("visual_prompt")
 
 
-class ViT(nn.Module):
+class ViT(nn.Module): # inherits nn.Module. this is a common base class for all models defined in pytorch
     """
     This is where the ViT is defined
+    when this class is called, __init__ functoin is activated.
     """
 
-    def __init__(self, cfg, load_pretrain=True, vis=False):
+    def __init__(self, cfg, load_pretrain=True, vis=False): # default vis is False!
         super(ViT, self).__init__()
+        """
+        The following things happen here.
+           1. Determines the type of tuning
+           2. Builds a backbone network based on the tuning type and configurations
+        """
 
-        if "prompt" in cfg.MODEL.TRANSFER_TYPE:
-            prompt_cfg = cfg.MODEL.PROMPT # saves the configurations of the prompt. Eg. prompt length, prompt initialization method....
+        if "prompt" in cfg.MODEL.TRANSFER_TYPE: # checks if the tuning type is "prompt"
+            # go to /src/configs/config.py to see the default settings for the prompt
+            prompt_cfg = cfg.MODEL.PROMPT
         else:
-            prompt_cfg = None # does not use the prompt
+            prompt_cfg = None
 
         if cfg.MODEL.TRANSFER_TYPE != "end2end" and "prompt" not in cfg.MODEL.TRANSFER_TYPE: # end2end = full fine-tuning
             # linear, cls, tiny-tl, parital, adapter
@@ -44,14 +53,14 @@ class ViT(nn.Module):
         else:
             adapter_cfg = None
 
-        self.build_backbone(prompt_cfg, cfg, adapter_cfg, load_pretrain, vis=vis)
+        self.build_backbone(prompt_cfg, cfg, adapter_cfg, load_pretrain, vis=vis) # builds the backbone
         self.cfg = cfg
         self.setup_side()
         self.setup_head(cfg)
 
     def setup_side(self):
         if self.cfg.MODEL.TRANSFER_TYPE != "side":
-            self.side = None
+            self.side = None # This is ran if VPT is ran
         else:
             self.side_alpha = nn.Parameter(torch.tensor(0.0))
             m = models.alexnet(pretrained=True)
@@ -62,7 +71,11 @@ class ViT(nn.Module):
             self.side_projection = nn.Linear(9216, self.feat_dim, bias=False)
 
     def build_backbone(self, prompt_cfg, cfg, adapter_cfg, load_pretrain, vis):
-        transfer_type = cfg.MODEL.TRANSFER_TYPE
+        """
+        Now let us build the backbone network!
+        """
+
+        transfer_type = cfg.MODEL.TRANSFER_TYPE # transfer_type is "prompt" in our case
         # builds the prompted vision transformer model and returns it and the size of the image
         self.enc, self.feat_dim = build_vit_sup_models(
             cfg.DATA.FEATURE, cfg.DATA.CROPSIZE, prompt_cfg, cfg.MODEL.MODEL_ROOT, adapter_cfg, load_pretrain, vis
@@ -172,7 +185,7 @@ class ViT(nn.Module):
             side_output = side_output.view(side_output.size(0), -1)
             side_output = self.side_projection(side_output)
 
-        if self.froze_enc and self.enc.training:
+        if self.froze_enc and self.enc.training: # in the case of VPT, froze_enc is False
             self.enc.eval()
         x = self.enc(x)  # batch_size x self.feat_dim
 
