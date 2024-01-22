@@ -23,9 +23,9 @@ _MODEL_TYPES = {
 def build_model(cfg): 
     """
     build model here
-    The followin things happen here.
+    The following things happen here.
         1. uses assert to check if the code ran be ran
-        2. constructs the models
+        2. constructs the model
     """
      
     # checks if the model type is valid

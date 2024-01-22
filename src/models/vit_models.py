@@ -55,7 +55,7 @@ class ViT(nn.Module): # inherits nn.Module. this is a common base class for all 
 
         self.build_backbone(prompt_cfg, cfg, adapter_cfg, load_pretrain, vis=vis) # builds the backbone (encoder + embedding layer)
         self.cfg = cfg
-        self.setup_side()
+        self.setup_side() # sets self.side = None
         self.setup_head(cfg)
 
     def setup_side(self):
@@ -174,11 +174,14 @@ class ViT(nn.Module): # inherits nn.Module. this is a common base class for all 
                 transfer_type))
 
     def setup_head(self, cfg):
+        """
+        This function creates the MLP head that is used for making predictions
+        """
         self.head = MLP(
             input_dim=self.feat_dim,
             mlp_dims=[self.feat_dim] * self.cfg.MODEL.MLP_NUM + \
                 [cfg.DATA.NUMBER_CLASSES], # noqa
-            special_bias=True
+            special_bias=True # uses a special bias which I have no idea what it is about
         )
 
     def forward(self, x, return_feature=False):

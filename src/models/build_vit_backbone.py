@@ -384,7 +384,7 @@ def build_vit_sup_models(model_type, crop_size, prompt_cfg=None, model_root=None
         "sup_vith14_imagenet21k": 1280,
     }
     if prompt_cfg is not None: # if prompting is enabled!
-        # defines the VPT model
+        # defines the PROMPTS used for VPT!
         model = PromptedVisionTransformer(prompt_cfg, model_type, crop_size, num_classes=-1, vis=vis)
     elif adapter_cfg is not None:
         model = ADPT_VisionTransformer(model_type, crop_size, num_classes=-1, adapter_cfg=adapter_cfg)
