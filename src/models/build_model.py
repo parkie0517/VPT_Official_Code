@@ -41,10 +41,10 @@ def build_model(cfg):
     model = _MODEL_TYPES[train_type](cfg) # if ViT is selected, then 'ViT(cfg)' is ran
 
     log_model_info(model, verbose=cfg.DBG)
-    model, device = load_model_to_device(model, cfg)
-    logger.info(f"Device used for model: {device}")
+    model, device = load_model_to_device(model, cfg) # loads the model to a available device. should be a GPU!
+    logger.info(f"Device used for model: {device}") # write a log
 
-    return model, device
+    return model, device # retuns (ViT model, cuda)
 
 
 def log_model_info(model, verbose=False):
