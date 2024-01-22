@@ -111,7 +111,9 @@ class PromptedTransformer(Transformer): # inherits from the Transformer class
     
 
     def train(self, mode=True):
-        # set train status for this class: disable all but the prompt-related modules
+        """
+        set train status for this class: disable all but the prompt-related modules
+        """
         if mode:
             # training:
             self.encoder.eval() # freeze
@@ -121,7 +123,7 @@ class PromptedTransformer(Transformer): # inherits from the Transformer class
         else:
             # eval:
             for module in self.children():
-                module.train(mode)
+                module.train(mode) # sets every module to evalulation mode
 
     def forward_deep_prompt(self, embedding_output):
         attn_weights = []
