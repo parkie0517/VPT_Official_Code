@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+call this one for training and eval a model with a specified transfer type. (transfer type = {prmot, ....})
 major actions here: fine-tune the features and evaluate different settings
 """
 import os
@@ -27,6 +28,7 @@ warnings.filterwarnings("ignore")
 def setup(args):
     """
     Create configs and perform basic setups.
+    I think directories are made in this function.
     - refer to this link to learn more about the cgf 
     - https://detectron2.readthedocs.io/en/latest/modules/config.html#detectron2.config.CfgNode
     """
@@ -45,7 +47,7 @@ def setup(args):
     output_folder = os.path.join(
         cfg.DATA.NAME, cfg.DATA.FEATURE, f"lr{lr}_wd{wd}")
 
-    # train cfg.RUN_N_TIMES times
+    # train cfg.RUN_N_TIMES times. default value is 5
     count = 1
     while count <= cfg.RUN_N_TIMES:
         output_path = os.path.join(output_dir, output_folder, f"run{count}")
@@ -85,6 +87,16 @@ def get_loaders(cfg, logger):
 
 
 def train(cfg, args):
+    """
+    The following things happen in this function.
+        1. clean up cuda cahch
+        2. fix seed
+        3. create a logger
+        4. train, val, test loaders are created
+        5. model is defined
+        6. training is performed
+        7. testing is performed
+    """
     # clear up residual cache from previous runs
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -120,9 +132,11 @@ def train(cfg, args):
 
 
 def main(args):
-    """main function to call from workflow"""
+    """
+    main function to call from workflow
+    """
 
-    # set up cfg and args
+    # sets up the cgf based using the arguments
     cfg = setup(args)
 
     # Perform training.
