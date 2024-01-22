@@ -42,7 +42,7 @@ class PromptedTransformer(Transformer): # inherits from the Transformer class
         patch_size = _pair(config.patches["size"]) # returns a patch size tuple. Eg. (16, 16)
 
         num_tokens = self.prompt_config.NUM_TOKENS # default is 5
-        self.num_tokens = num_tokens  # number of prompted tokens
+        self.num_tokens = num_tokens  # number of the prompted tokens
 
         self.prompt_dropout = Dropout(self.prompt_config.DROPOUT) # default is 0.0
 
@@ -87,7 +87,7 @@ class PromptedTransformer(Transformer): # inherits from the Transformer class
     def incorporate_prompt(self, x):
         """
         combine prompt embeddings with image-patch embeddings
-        x: image
+        x: input batch of images
         """
         B = x.shape[0] # number of the images in the batch
         # after CLS token, all before image patches
@@ -126,41 +126,68 @@ class PromptedTransformer(Transformer): # inherits from the Transformer class
                 module.train(mode) # sets every module to evalulation mode
 
     def forward_deep_prompt(self, embedding_output):
+        """
+        embedding_output
+        deep_prompt_embeddings
+        """
         attn_weights = []
         hidden_states = None
         weights = None
-        B = embedding_output.shape[0]
-        num_layers = self.vit_config.transformer["num_layers"]
+        B = embedding_output.shape[0] # returns the batch size
+        num_layers = self.vit_config.transformer["num_layers"] # returns the number of layers in the ViT
 
-        for i in range(num_layers):
+        for i in range(num_layers): # 0, 1, ...., 11
             if i == 0:
-                hidden_states, weights = self.encoder.layer[i](embedding_output) # 
+                """
+                Encoder explanation:
+                    - The encoder instance is inherited from Transformer class
+                    - Ordinary encoder of a Transformer architecture
+                    - encoder consists of blocks(=layers)
+                    - Encoder = Block x num_layers
+                    - Encoder = (MHSA + MLP) x num_layers
+                """
+                hidden_states, weights = self.encoder.layer[i](embedding_output) # passes through the first block(=layer)
             else:
-                if i <= self.deep_prompt_embeddings.shape[0]:
+                if i <= self.deep_prompt_embeddings.shape[0]: # returns the number of layers - 1
+                    """
+                    The code below is too complicated. I will explain in steps.
+                        1. Extracts the appropriate embedding for the current layer
+                        2. Applies prompt projection so that prompt_dim matches the hidden_size
+                        3. Expands the prompts to match the size of the batch
+                        4. Applies dropout to the prompts
+                        5. the result is stored in 'deep_prompt_emb'
+                    """
                     deep_prompt_emb = self.prompt_dropout(self.prompt_proj(self.deep_prompt_embeddings[i-1]).expand(B, -1, -1))
 
                     hidden_states = torch.cat((
-                        hidden_states[:, :1, :],
-                        deep_prompt_emb,
-                        hidden_states[:, (1+self.num_tokens):, :]
-                    ), dim=1)
+                        hidden_states[:, :1, :], # cls_token
+                        deep_prompt_emb, # prompt_tokens
+                        hidden_states[:, (1+self.num_tokens):, :] # num_tokens = number of the prompted tokens
+                    ), dim=1) # concats along the 1 axis (which is the number of the tokens)
 
-
-                hidden_states, weights = self.encoder.layer[i](hidden_states)
+                hidden_states, weights = self.encoder.layer[i](hidden_states)# returns the output
 
             if self.encoder.vis:
                 attn_weights.append(weights)
 
-        encoded = self.encoder.encoder_norm(hidden_states)
+        encoded = self.encoder.encoder_norm(hidden_states) # applies layer normalization to the output of the Transformer's encoder
         return encoded, attn_weights
 
     def forward(self, x):
-        # this is the default version:
-        embedding_output = self.incorporate_prompt(x)
-
-        if self.prompt_config.DEEP:
-            encoded, attn_weights = self.forward_deep_prompt(embedding_output) # passes through the Transformer model
-        else:
+        """
+        x: input batch of images.
+        """
+        
+        embedding_output = self.incorporate_prompt(x) # incorporates the cls_token, prompts, patches
+        
+        """
+        There are 2 types of VPT
+            Option 1: VPT-Deep
+            Option 2: VPT-Shallow
+        """
+        if self.prompt_config.DEEP: # VPT-Deep
+            encoded, attn_weights = self.forward_deep_prompt(embedding_output)
+        else: # VPT-Shallow
             encoded, attn_weights = self.encoder(embedding_output)
 
         return encoded, attn_weights

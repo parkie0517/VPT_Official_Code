@@ -249,12 +249,17 @@ class Block(nn.Module):
 
 
 class Encoder(nn.Module):
+    """
+    Ordinary encoder of a Transformer architecture
+    Encoder = Block x num_layers
+    Encoder = (MHSA + MLP) x num_layers
+    """
     def __init__(self, config, vis):
         super(Encoder, self).__init__()
         self.vis = vis
         self.layer = nn.ModuleList()
         self.encoder_norm = LayerNorm(config.hidden_size, eps=1e-6)
-        for _ in range(config.transformer["num_layers"]):
+        for _ in range(config.transformer["num_layers"]): # appends a block for the number of layers
             layer = Block(config, vis)
             self.layer.append(copy.deepcopy(layer))
 
@@ -268,6 +273,9 @@ class Encoder(nn.Module):
         return encoded, attn_weights
 
     def forward_cls_layerwise(self, hidden_states):
+        """
+        Don't know what this function does....
+        """
         # hidden_states: B, 1+n_patches, dim
 
         if hidden_states.size(0) != 1:
