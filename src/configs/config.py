@@ -2,7 +2,7 @@
 
 """Config system (based on Detectron's)."""
 
-from .config_node import CfgNode
+from .config_node import CfgNode # CgfNode is a class in the config_node.py file
 
 
 # Global config object

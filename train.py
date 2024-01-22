@@ -27,6 +27,8 @@ warnings.filterwarnings("ignore")
 def setup(args):
     """
     Create configs and perform basic setups.
+    - refer to this link to learn more about the cgf 
+    - https://detectron2.readthedocs.io/en/latest/modules/config.html#detectron2.config.CfgNode
     """
     cfg = get_cfg()
     cfg.merge_from_file(args.config_file)
