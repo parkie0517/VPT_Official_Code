@@ -87,18 +87,28 @@ class PromptedTransformer(Transformer): # inherits from the Transformer class
     def incorporate_prompt(self, x):
         """
         combine prompt embeddings with image-patch embeddings
+        x: image
         """
-        B = x.shape[0]
+        B = x.shape[0] # number of the images in the batch
         # after CLS token, all before image patches
-        x = self.embeddings(x)  # (batch_size, 1 + n_patches, hidden_dim)
+        """
+        the embedding function is inherited from the Transformer class
+        this function outputs the embeddings called x. 
+        x has a shape of (batch_size, cls_token + n_patches, hidden_dim)
+        """
+        x = self.embeddings(x) 
+        """
+        the cat function outputs a tensor called x.
+        x has a shape of (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
+        """
         x = torch.cat((
-                x[:, :1, :],
-                self.prompt_dropout(self.prompt_proj(self.prompt_embeddings).expand(B, -1, -1)),
-                x[:, 1:, :]
+                x[:, :1, :], # cls_token
+                self.prompt_dropout(self.prompt_proj(self.prompt_embeddings).expand(B, -1, -1)), # expands the prompts to the match the batch size
+                x[:, 1:, :] # patch_embeddings
             ), dim=1)
-        # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
-
+        
         return x
+    
 
     def train(self, mode=True):
         # set train status for this class: disable all but the prompt-related modules

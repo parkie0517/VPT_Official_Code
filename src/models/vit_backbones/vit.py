@@ -138,7 +138,8 @@ class Mlp(nn.Module):
 
 
 class Embeddings(nn.Module):
-    """Construct the embeddings from patch, position embeddings.
+    """
+    Construct the embeddings from patch, position embeddings.
     """
     def __init__(self, config, img_size, in_channels=3):
         super(Embeddings, self).__init__()
