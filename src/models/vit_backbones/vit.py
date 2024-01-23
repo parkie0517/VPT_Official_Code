@@ -336,10 +336,7 @@ class Transformer(nn.Module):
 
 
 class VisionTransformer(nn.Module):
-    def __init__(
-        self, model_type,
-        img_size=224, num_classes=21843, vis=False
-    ):
+    def __init__(self, model_type, img_size=224, num_classes=21843, vis=False):
         super(VisionTransformer, self).__init__()
         config = CONFIGS[model_type]
         self.num_classes = num_classes

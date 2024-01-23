@@ -26,8 +26,8 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         projection_prev_dim = input_dim
         projection_modulelist = []
-        last_dim = mlp_dims[-1]
-        mlp_dims = mlp_dims[:-1]
+        last_dim = mlp_dims[-1] # -1 indicates the last value in the list
+        mlp_dims = mlp_dims[:-1] # indicates all the values in the list except for the last one
 
         if add_bn_first:
             if normalization is not None:

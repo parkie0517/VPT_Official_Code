@@ -101,8 +101,6 @@ def train(cfg, args):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # main training / eval actions here
-
     # fix the seed for reproducibility
     if cfg.SEED is not None:
         torch.manual_seed(cfg.SEED)
