@@ -12,7 +12,7 @@ _C = CfgNode()
 
 _C.DBG = False
 _C.OUTPUT_DIR = "./output"
-_C.RUN_N_TIMES = 5
+_C.RUN_N_TIMES = 1
 # Perform benchmarking to select the fastest CUDNN algorithms to use
 # Note that this may increase the memory usage and will likely not result
 # in overall speedups when variable size inputs are used (e.g. COCO training)
@@ -30,7 +30,7 @@ _C.SEED = None
 # Model options
 # ----------------------------------------------------------------------
 _C.MODEL = CfgNode()
-_C.MODEL.TRANSFER_TYPE = "linear"  # one of linear, end2end, prompt, adapter, side, partial-1, tinytl-bias
+_C.MODEL.TRANSFER_TYPE = "prompt"  # one of linear, end2end, prompt, adapter, side, partial-1, tinytl-bias
 _C.MODEL.WEIGHT_PATH = ""  # if resume from some checkpoint file
 _C.MODEL.SAVE_CKPT = False
 
@@ -47,7 +47,7 @@ _C.MODEL.LINEAR.DROPOUT = 0.1
 # Prompt options
 # ----------------------------------------------------------------------
 _C.MODEL.PROMPT = CfgNode()
-_C.MODEL.PROMPT.NUM_TOKENS = 5 # default prompt length is 5
+_C.MODEL.PROMPT.NUM_TOKENS = 50 # default prompt length is 5
 _C.MODEL.PROMPT.LOCATION = "prepend"
 # prompt initalizatioin: 
     # (1) default "random"
@@ -58,7 +58,7 @@ _C.MODEL.PROMPT.INITIATION = "random"  # "final-cls", "cls-first12"
 _C.MODEL.PROMPT.CLSEMB_FOLDER = ""
 _C.MODEL.PROMPT.CLSEMB_PATH = ""
 _C.MODEL.PROMPT.PROJECT = -1  # "projection mlp hidden dim"
-_C.MODEL.PROMPT.DEEP = False # "whether do deep prompt or not, only for prepend location"
+_C.MODEL.PROMPT.DEEP = True # "whether do deep prompt or not, only for prepend location"
 
 
 _C.MODEL.PROMPT.NUM_DEEP_LAYERS = None  # if set to be an int, then do partial-deep prompt tuning
